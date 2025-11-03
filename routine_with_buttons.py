@@ -1,5 +1,5 @@
 import board
-import neopixel
+import neopixel_placeholder
 import time
 from adafruit_circuitplayground import cp
 
@@ -9,7 +9,7 @@ WIDTH = 16
 HEIGHT = 16
 NUM_PIXELS = WIDTH * HEIGHT
 BRIGHTNESS = 0.08
-PIXEL_ORDER = neopixel.GRBW   # change to GRB for RGB strips
+PIXEL_ORDER = neopixel_placeholder.GRBW   # change to GRB for RGB strips
 BK = (0, 0, 0, 0)
 BL = (0, 0, 255, 0)
 RD = (189, 8, 8, 0)
@@ -36,7 +36,7 @@ mario = (
     (BK, BK, BK, HR, HR, HR, HR, BK, BK, BK, BK, HR, HR, HR, HR, BK),
 )
 
-pixels = neopixel.NeoPixel(
+pixels = neopixel_placeholder.NeoPixel(
     PIN, NUM_PIXELS,
     brightness=BRIGHTNESS,
     auto_write=False,
