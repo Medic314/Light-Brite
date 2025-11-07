@@ -8,6 +8,7 @@ ROWS = 16
 COLS = 16
 PIXEL_WIDTH = 30
 PIXEL_HEIGHT = 30
+colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
 root = Tk()
 root.title("Super Cool Program That Lets You Select LED Colors On a Grid 2025 Real")
@@ -20,12 +21,56 @@ def hex_to_rgb(hex_code):
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
 
+def pick_color():
+    color = askcolor(title=f"Choose color to paint")[1]
+    colors.insert(0, color)
+    colorpick2_button.config(bg=colors[0])
+    for i in range(5):
+        if not colors[i+1] == "#000000":
+            color_history_buttons[i].config(bg=colors[i+1])
+        else:
+            color_history_buttons[i].config(bg="#F0F0F0")
+    if len(colors) > 5:
+        colors.pop()
+    print(colors)
+
+def reset_color():
+    colors.insert(0, "#000000")
+    colorpick2_button.config(bg="#F0F0F0")
+    for i in range(5):
+        if not colors[i+1] == "#000000":
+            color_history_buttons[i].config(bg=colors[i+1])
+        else:
+            color_history_buttons[i].config(bg="#F0F0F0")
+    if len(colors) > 5:
+        colors.pop()
+    print(colors)
+
 def change_bg(x, y):
-    color = askcolor(title=f"Choose color for cell ({x},{y})")[1]
-    if color:
-        buttons[x][y].config(bg=color)
-        color_rgb = hex_to_rgb(color)
+    if colors[0]:
+        if not colors[0] == "#000000":
+            buttons[x][y].config(bg=colors[0])
+        else:
+            buttons[x][y].config(bg="#F0F0F0")
+        color_rgb = hex_to_rgb(colors[0])
         buttons_colors[x][y] = color_rgb
+
+def set_color_from_history(history_number):
+    colors.insert(0, colors[history_number+1])
+    if not colors[0] == "#000000":
+        colorpick2_button.config(bg=colors[0])
+    else:
+        colorpick2_button.config(bg="#F0F0F0")
+    for i in range(5):
+        if not colors[i+1] == "#000000":
+            color_history_buttons[i].config(bg=colors[i+1])
+        else:
+            color_history_buttons[i].config(bg="#F0F0F0")
+    if len(colors) > 5:
+        colors.pop()
+    print(colors)
+
+
 
 def submit():
     led.grid = buttons_colors
@@ -34,7 +79,7 @@ def submit():
     led.draw_grid()
 
 total_width_grid = (COLS * PIXEL_WIDTH)
-total_width = total_width_grid + 200
+total_width = total_width_grid + 250
 total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
 root.geometry(f"{total_width}x{total_height}")
 
@@ -56,6 +101,30 @@ submit_x = max((total_width_grid - submit_width) // 2, 0)
 submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
 submit_button = Button(root, bg="#F0F0F0", text="SUBMIT", command=submit)
 submit_button.place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+colorpick_width = 100
+colorpick_x = (total_width_grid + ((total_width - total_width_grid)/2)) - colorpick_width/2
+colorpick_y = total_height / 7
+colorpick_button = Button(root, bg="#F0F0F0", text="Pick Color", command=pick_color)
+colorpick_button.place(x=colorpick_x, y=colorpick_y, width=colorpick_width, height=32)
+
+colorpick2_width = 32
+colorpick2_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-32-32
+colorpick2_y = total_height / 7
+colorpick2_button = Button(root, bg="#F0F0F0", command=reset_color)
+colorpick2_button.place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
+
+color_history_buttons = [None for _ in range(5)]
+offset = 0
+for i in range(5):
+    button = Button(root,
+                        relief="raised",
+                        bd=1,
+                        bg="#F0F0F0")
+    button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=(total_height / 7)*1.75, width=32, height=32)
+    button.config(command=lambda i=i: set_color_from_history(i))
+    color_history_buttons[i] = button
+    offset += 48    
 
 
 
