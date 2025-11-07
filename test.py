@@ -96,10 +96,16 @@ for x in range(ROWS):
 
 
 
-submit_width = 200
-submit_x = max((total_width_grid - submit_width) // 2, 0)
+submit_width = 100
+submit_x = max((total_width_grid - submit_width) // 4, 0)
 submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
 submit_button = Button(root, bg="#F0F0F0", text="SUBMIT", command=submit)
+submit_button.place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+submit_width = 100
+submit_x = max(((total_width_grid - submit_width) // 4)*3, 0)
+submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+submit_button = Button(root, bg="#F0F0F0", text="RESET", command=submit)
 submit_button.place(x=submit_x, y=submit_y, width=submit_width, height=32)
 
 colorpick_width = 100
