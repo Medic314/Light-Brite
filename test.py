@@ -4,44 +4,50 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 import routine_with_buttons as led
 import json
 
+# ---------------------------------------------------------------------------------------------------
+
+root = Tk()
+root.title("Super Cool Program That Lets You Select LED Colors On a Grid 2025 Real")
+
 ROWS = 16
 COLS = 16
 PIXEL_WIDTH = 30
 PIXEL_HEIGHT = 30
+
 colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
-root = Tk()
-root.title("Super Cool Program That Lets You Select LED Colors On a Grid 2025 Real")
+buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
+buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
+buttons_other = [None for _ in range(9)]
+
+# ---------------------------------------------------------------------------------------------------
 
 def hex_to_rgb(hex_code):
     hex_code = hex_code.lstrip('#')
     rgb = tuple(int(hex_code[i:i+2], 16) for i in (0, 2, 4))
     return rgb + (0,)
 
-buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
-buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
-
 def pick_color():
     color = askcolor(title=f"Choose color to paint")[1]
     colors.insert(0, color)
-    colorpick2_button.config(bg=colors[0])
+    buttons_other[3].config(bg=colors[0])
     for i in range(5):
         if not colors[i+1] == "#000000":
-            color_history_buttons[i].config(bg=colors[i+1])
+            buttons_other[i+4].config(bg=colors[i+1])
         else:
-            color_history_buttons[i].config(bg="#F0F0F0")
+            buttons_other[i+4].config(bg="#F0F0F0")
     if len(colors) > 5:
         colors.pop()
     print(colors)
 
 def reset_color():
     colors.insert(0, "#000000")
-    colorpick2_button.config(bg="#F0F0F0")
+    buttons_other[3].config(bg="#F0F0F0")
     for i in range(5):
         if not colors[i+1] == "#000000":
-            color_history_buttons[i].config(bg=colors[i+1])
+            buttons_other[i+4].config(bg=colors[i+1])
         else:
-            color_history_buttons[i].config(bg="#F0F0F0")
+            buttons_other[i+4].config(bg="#F0F0F0")
     if len(colors) > 5:
         colors.pop()
     print(colors)
@@ -58,25 +64,54 @@ def change_bg(x, y):
 def set_color_from_history(history_number):
     colors.insert(0, colors[history_number+1])
     if not colors[0] == "#000000":
-        colorpick2_button.config(bg=colors[0])
+        buttons_other[3].config(bg=colors[0])
     else:
-        colorpick2_button.config(bg="#F0F0F0")
+        buttons_other[3].config(bg="#F0F0F0")
     for i in range(5):
         if not colors[i+1] == "#000000":
-            color_history_buttons[i].config(bg=colors[i+1])
+            buttons_other[i+4].config(bg=colors[i+1])
         else:
-            color_history_buttons[i].config(bg="#F0F0F0")
+            buttons_other[i+4].config(bg="#F0F0F0")
     if len(colors) > 5:
         colors.pop()
     print(colors)
 
+def rotate_and_mirror(grid):
+    rows = len(grid)
+    cols = len(grid[0])
+
+    # Build the 90° counterclockwise rotated grid (size: cols x rows)
+    rotated = []
+    for y in range(cols):
+        new_row = []
+        for x in range(rows):
+            # safe access in case of ragged input
+            if y < len(grid[x]):
+                new_row.append(grid[x][cols - 1 - y])
+            else:
+                new_row.append((0, 0, 0, 0))
+        rotated.append(new_row)
+
+    # Mirror horizontally (flip each row left-to-right)
+    mirrored = [row[::-1] for row in rotated]
+    return mirrored
 
 
 def submit():
-    led.grid = buttons_colors
+    led.grid = rotate_and_mirror(buttons_colors)
+    print(rotate_and_mirror(buttons_colors))
     for i in led.grid:
         print(i)
     led.draw_grid()
+
+def clear():
+    led.clear
+    for x in range(ROWS):
+        for y in range(COLS):
+            buttons[x][y].config(bg="#F0F0F0")
+            buttons_colors[x][y] = (0, 0, 0, 0)
+
+# ---------------------------------------------------------------------------------------------------
 
 total_width_grid = (COLS * PIXEL_WIDTH)
 total_width = total_width_grid + 250
@@ -94,34 +129,31 @@ for x in range(ROWS):
         buttons[x][y] = button
         buttons_colors[x][y] = (0, 0, 0, 0)
 
-
-
 submit_width = 100
 submit_x = max((total_width_grid - submit_width) // 4, 0)
 submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
-submit_button = Button(root, bg="#F0F0F0", text="SUBMIT", command=submit)
-submit_button.place(x=submit_x, y=submit_y, width=submit_width, height=32)
+buttons_other[0] = Button(root, bg="#F0F0F0", text="SUBMIT", command=submit)
+buttons_other[0].place(x=submit_x, y=submit_y, width=submit_width, height=32)
 
 submit_width = 100
 submit_x = max(((total_width_grid - submit_width) // 4)*3, 0)
 submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
-submit_button = Button(root, bg="#F0F0F0", text="RESET", command=led.clear)
-submit_button.place(x=submit_x, y=submit_y, width=submit_width, height=32)
+buttons_other[1] = Button(root, bg="#F0F0F0", text="RESET", command=clear)
+buttons_other[1].place(x=submit_x, y=submit_y, width=submit_width, height=32)
 
 colorpick_width = 100
 colorpick_x = (total_width_grid + ((total_width - total_width_grid)/2)) - colorpick_width/2
 colorpick_y = total_height / 7
-colorpick_button = Button(root, bg="#F0F0F0", text="Pick Color", command=pick_color)
-colorpick_button.place(x=colorpick_x, y=colorpick_y, width=colorpick_width, height=32)
+buttons_other[2] = Button(root, bg="#F0F0F0", text="Pick Color", command=pick_color)
+buttons_other[2].place(x=colorpick_x, y=colorpick_y, width=colorpick_width, height=32)
 
 colorpick2_width = 32
 colorpick2_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-32-32
 colorpick2_y = total_height / 7
-colorpick2_button = Button(root, bg="#F0F0F0", command=reset_color)
-colorpick2_button.place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
-
-color_history_buttons = [None for _ in range(5)]
+buttons_other[3] = Button(root, bg="#F0F0F0", command=reset_color)
+buttons_other[3].place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
 offset = 0
+
 for i in range(5):
     button = Button(root,
                         relief="raised",
@@ -129,13 +161,12 @@ for i in range(5):
                         bg="#F0F0F0")
     button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=(total_height / 7)*1.75, width=32, height=32)
     button.config(command=lambda i=i: set_color_from_history(i))
-    color_history_buttons[i] = button
+    buttons_other[i+4] = button
     offset += 48    
 
-
+# ---------------------------------------------------------------------------------------------------
 
 def file_load_from_list(data):
-
     for i, row in enumerate(data):
         if i >= ROWS:
             break
@@ -181,13 +212,92 @@ def save_file():
         with open(file_path, 'w') as f:
             json.dump(buttons_colors, f)
 
+# ---------------------------------------------------------------------------------------------------
+
+def deload_all_lights():
+    for x in range(ROWS):
+        for y in range(COLS):
+            buttons[x][y].destroy()
+
+def deload_light_brite():
+    deload_all_lights()
+    for i in range(len(buttons_other)):
+        buttons_other[i].destroy()
+    for i in range(len(buttons_other-4)):
+        buttons_other[i+4].destroy()
+
+def load_conway():
+    deload_light_brite()
+    pass
+
+def load_light_brite():
+    deload_all_lights()
+    total_width_grid = (COLS * PIXEL_WIDTH)
+    total_width = total_width_grid + 250
+    total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
+    root.geometry(f"{total_width}x{total_height}")
+
+    for x in range(ROWS):
+        for y in range(COLS):
+            button = Button(root,
+                            relief="raised",
+                            bd=1,
+                            bg="#F0F0F0")
+            button.place(x=x * PIXEL_WIDTH, y=(y * PIXEL_HEIGHT), width=PIXEL_WIDTH, height=PIXEL_HEIGHT)
+            button.config(command=lambda x=x, y=y: change_bg(x, y))
+            buttons[x][y] = button
+            buttons_colors[x][y] = (0, 0, 0, 0)
+
+    submit_width = 100
+    submit_x = max((total_width_grid - submit_width) // 4, 0)
+    submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+    buttons_other[0] = Button(root, bg="#F0F0F0", text="SUBMIT", command=submit)
+    buttons_other[0].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+    submit_width = 100
+    submit_x = max(((total_width_grid - submit_width) // 4)*3, 0)
+    submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+    buttons_other[1] = Button(root, bg="#F0F0F0", text="RESET", command=clear)
+    buttons_other[1].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+    colorpick_width = 100
+    colorpick_x = (total_width_grid + ((total_width - total_width_grid)/2)) - colorpick_width/2
+    colorpick_y = total_height / 7
+    buttons_other[2] = Button(root, bg="#F0F0F0", text="Pick Color", command=pick_color)
+    buttons_other[2].place(x=colorpick_x, y=colorpick_y, width=colorpick_width, height=32)
+
+    colorpick2_width = 32
+    colorpick2_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-32-32
+    colorpick2_y = total_height / 7
+    buttons_other[3] = Button(root, bg="#F0F0F0", command=reset_color)
+    buttons_other[3].place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
+    offset = 0
+
+    for i in range(5):
+        button = Button(root,
+                            relief="raised",
+                            bd=1,
+                            bg="#F0F0F0")
+        button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=(total_height / 7)*1.75, width=32, height=32)
+        button.config(command=lambda i=i: set_color_from_history(i))
+        buttons_other[i+4] = button
+        offset += 48    
+
 menu_bar = Menu(root)
 file_menu = Menu(menu_bar, tearoff=0)
 file_menu.add_command(label="Open", command=open_file)
 file_menu.add_command(label="Save", command=save_file)
 menu_bar.add_cascade(label="File", menu=file_menu)
+
+file_menu2 = Menu(menu_bar, tearoff=0)
+
+file_menu2.add_command(label="Light Brite", command=load_light_brite)
+file_menu2.add_command(label="Conway", command=load_conway)
+menu_bar.add_cascade(label="Modes", menu=file_menu2)
+
 root.config(menu=menu_bar)
 
+# ---------------------------------------------------------------------------------------------------
 
 
 
