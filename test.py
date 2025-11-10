@@ -18,6 +18,7 @@ colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
+buttons_polarity = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_other = [None for _ in range(9)]
 
 # ---------------------------------------------------------------------------------------------------
@@ -77,20 +78,23 @@ def set_color_from_history(history_number):
     print(colors)
 
 def rotate_and_mirror(grid):
-    rows = len(grid)
-    cols = len(grid[0])
+    def rotate90_ccw(g):
+        rows = len(g)
+        cols = max((len(r) for r in g), default=0)
+        rotated = []
+        for y in range(cols):
+            new_row = []
+            for x in range(rows):
+                if len(g[x]) > (cols - 1 - y):
+                    new_row.append(g[x][cols - 1 - y])
+                else:
+                    new_row.append((0, 0, 0, 0))
+            rotated.append(new_row)
+        return rotated
 
-    # Build the 90° counterclockwise rotated grid (size: cols x rows)
-    rotated = []
-    for y in range(cols):
-        new_row = []
-        for x in range(rows):
-            # safe access in case of ragged input
-            if y < len(grid[x]):
-                new_row.append(grid[x][cols - 1 - y])
-            else:
-                new_row.append((0, 0, 0, 0))
-        rotated.append(new_row)
+    rotated = grid
+    for _ in range(3):  # rotate three times (3 * 90° CCW = 270° CCW / 90° CW)
+        rotated = rotate90_ccw(rotated)
 
     # Mirror horizontally (flip each row left-to-right)
     mirrored = [row[::-1] for row in rotated]
@@ -214,21 +218,75 @@ def save_file():
 
 # ---------------------------------------------------------------------------------------------------
 
+def flip_polarity(x,y):
+    if buttons_polarity[x][y]:
+        buttons[x][y].config(bg="#000000")
+        color_rgb = hex_to_rgb("#000000")
+        buttons_polarity[x][y] = False
+    else:
+        buttons[x][y].config(bg="#F0F0F0")
+        color_rgb = hex_to_rgb("#F0F0F0")
+        buttons_polarity[x][y] = True
+    buttons_colors[x][y] = color_rgb
+
+def conway_clear():
+    led.clear
+    for x in range(ROWS):
+        for y in range(COLS):
+            buttons[x][y].config(bg="#000000")
+            buttons_colors[x][y] = (0, 0, 0, 0)
+
+
+def update():
+    for x in range(ROWS):
+        for y in range(COLS):
+            if buttons_polarity[x][y]:
+                for i in range(8):
+                    pass
+                     
+
+def load_conway():
+    deload_light_brite()
+    for x in range(ROWS):
+        for y in range(COLS):
+            button = Button(root,
+                            relief="raised",
+                            bd=1,
+                            bg="#000000")
+            button.place(x=x * PIXEL_WIDTH, y=(y * PIXEL_HEIGHT), width=PIXEL_WIDTH, height=PIXEL_HEIGHT)
+            p = False
+            button.config(command=lambda x=x, y=y: flip_polarity(x, y))
+            buttons[x][y] = button
+            buttons_polarity[x][y] = False
+
+    submit_width = 100
+    submit_x = max((total_width_grid - submit_width) // 4, 0)
+    submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+    buttons_other[0] = Button(root, bg="#F0F0F0", text="UPDATE", command=update)
+    buttons_other[0].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+    submit_width = 100
+    submit_x = max(((total_width_grid - submit_width) // 4)*3, 0)
+    submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+    buttons_other[1] = Button(root, bg="#F0F0F0", text="RESET", command=conway_clear)
+    buttons_other[1].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+    
+
+
+# ---------------------------------------------------------------------------------------------------
+
 def deload_all_lights():
     for x in range(ROWS):
         for y in range(COLS):
             buttons[x][y].destroy()
 
 def deload_light_brite():
+    clear()
     deload_all_lights()
     for i in range(len(buttons_other)):
         buttons_other[i].destroy()
-    for i in range(len(buttons_other-4)):
+    for i in range(len(buttons_other)-4):
         buttons_other[i+4].destroy()
-
-def load_conway():
-    deload_light_brite()
-    pass
 
 def load_light_brite():
     deload_all_lights()
@@ -298,6 +356,7 @@ menu_bar.add_cascade(label="Modes", menu=file_menu2)
 root.config(menu=menu_bar)
 
 # ---------------------------------------------------------------------------------------------------
+
 
 
 
