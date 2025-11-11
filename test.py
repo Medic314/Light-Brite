@@ -19,7 +19,7 @@ colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_polarity = [[None for _ in range(COLS)] for _ in range(ROWS)]
-buttons_other = [None for _ in range(9)]
+buttons_other = [None for _ in range(19)]
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -115,6 +115,52 @@ def clear():
             buttons[x][y].config(bg="#F0F0F0")
             buttons_colors[x][y] = (0, 0, 0, 0)
 
+
+def base_colors(b):
+    def color_set():
+        buttons_other[3].config(bg=colors[0])
+        for i in range(5):
+            if not colors[i+1] == "#000000":
+                buttons_other[i+4].config(bg=colors[i+1])
+            else:
+                buttons_other[i+4].config(bg="#F0F0F0")
+        if len(colors) > 5:
+            colors.pop()
+    if b == 0:
+        colors.insert(0, "#FF0000")
+        color_set()
+    if b == 1:
+        colors.insert(0, "#FF5500")
+        color_set()
+    if b == 2:
+        colors.insert(0, "#FFFF00")
+        color_set()
+    if b == 3:
+        colors.insert(0, "#00FF55")
+        color_set()
+    if b == 4:
+        colors.insert(0, "#005500")
+        color_set()
+
+    if b == 5:
+        colors.insert(0, "#00FFFF")
+        color_set()
+    if b == 6:
+        colors.insert(0, "#0000FF")
+        color_set()
+    if b == 7:
+        colors.insert(0, "#AA00FF")
+        color_set()
+    if b == 8:
+        colors.insert(0, "#FF00FF")
+        color_set()
+    if b == 9:
+        colors.insert(0, "#FFFFFF")
+        color_set()
+    
+        
+        
+
 # ---------------------------------------------------------------------------------------------------
 
 total_width_grid = (COLS * PIXEL_WIDTH)
@@ -156,8 +202,8 @@ colorpick2_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - colo
 colorpick2_y = total_height / 7
 buttons_other[3] = Button(root, bg="#F0F0F0", command=reset_color)
 buttons_other[3].place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
-offset = 0
 
+offset = 0
 for i in range(5):
     button = Button(root,
                         relief="raised",
@@ -166,7 +212,38 @@ for i in range(5):
     button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=(total_height / 7)*1.75, width=32, height=32)
     button.config(command=lambda i=i: set_color_from_history(i))
     buttons_other[i+4] = button
-    offset += 48    
+    offset += 48
+
+offset = 0
+for i in range(5):
+    button = Button(root,
+                        relief="raised",
+                        bd=1,
+                        bg="#F0F0F0")
+    button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=((total_height / 7)*1.75)+80, width=32, height=32)
+    button.config(command=lambda i=i: base_colors(i))
+    buttons_other[i+9] = button
+    offset += 48
+offset = 0
+for i in range(5):
+    button = Button(root,
+                        relief="raised",
+                        bd=1,
+                        bg="#F0F0F0")
+    button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=((total_height / 7)*1.75)+80+48, width=32, height=32)
+    button.config(command=lambda i=i: base_colors(i+5))
+    buttons_other[i+14] = button
+    offset += 48
+buttons_other[9].config(bg="#FF0000")
+buttons_other[10].config(bg="#FF5500")
+buttons_other[11].config(bg="#FFFF00")
+buttons_other[12].config(bg="#00FF55")
+buttons_other[13].config(bg="#005500")
+buttons_other[14].config(bg="#00FFFF")
+buttons_other[15].config(bg="#0000FF")
+buttons_other[16].config(bg="#AA00FF")
+buttons_other[17].config(bg="#FF00FF")
+buttons_other[18].config(bg="#FFFFFF")
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -285,8 +362,6 @@ def deload_light_brite():
     deload_all_lights()
     for i in range(len(buttons_other)):
         buttons_other[i].destroy()
-    for i in range(len(buttons_other)-4):
-        buttons_other[i+4].destroy()
 
 def load_light_brite():
     deload_all_lights()
@@ -339,7 +414,40 @@ def load_light_brite():
         button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=(total_height / 7)*1.75, width=32, height=32)
         button.config(command=lambda i=i: set_color_from_history(i))
         buttons_other[i+4] = button
-        offset += 48    
+        offset += 48
+        
+    offset = 0
+    for i in range(5):
+        button = Button(root,
+                            relief="raised",
+                            bd=1,
+                            bg="#F0F0F0")
+        button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=((total_height / 7)*1.75)+80, width=32, height=32)
+        button.config(command=lambda i=i: base_colors(i))
+        buttons_other[i+9] = button
+        offset += 48
+    offset = 0
+    for i in range(5):
+        button = Button(root,
+                            relief="raised",
+                            bd=1,
+                            bg="#F0F0F0")
+        button.place(x=(((total_width_grid + ((total_width - total_width_grid)/2)) - colorpick2_width)-64-16)+offset, y=((total_height / 7)*1.75)+80+48, width=32, height=32)
+        button.config(command=lambda i=i: base_colors(i+5))
+        buttons_other[i+14] = button
+        offset += 48
+    buttons_other[9].config(bg="#FF0000")
+    buttons_other[10].config(bg="#FF5500")
+    buttons_other[11].config(bg="#FFFF00")
+    buttons_other[12].config(bg="#00FF55")
+    buttons_other[13].config(bg="#005500")
+    buttons_other[14].config(bg="#00FFFF")
+    buttons_other[15].config(bg="#0000FF")
+    buttons_other[16].config(bg="#AA00FF")
+    buttons_other[17].config(bg="#FF00FF")
+    buttons_other[18].config(bg="#FFFFFF")
+
+        
 
 menu_bar = Menu(root)
 file_menu = Menu(menu_bar, tearoff=0)
