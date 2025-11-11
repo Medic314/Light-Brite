@@ -3,6 +3,7 @@ from tkinter.colorchooser import askcolor
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import routine_with_buttons as led
 import json
+import time
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -18,7 +19,6 @@ colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
-buttons_polarity = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_other = [None for _ in range(19)]
 
 # ---------------------------------------------------------------------------------------------------
@@ -294,35 +294,78 @@ def save_file():
             json.dump(buttons_colors, f)
 
 # ---------------------------------------------------------------------------------------------------
+buttons_polarity = [[False for _ in range(COLS)] for _ in range(ROWS)]
+game_states = [None for _ in range(2)]
 
 def flip_polarity(x,y):
-    if buttons_polarity[x][y]:
+    current = bool(buttons_polarity[x][y])
+    if current:
         buttons[x][y].config(bg="#000000")
         color_rgb = hex_to_rgb("#000000")
         buttons_polarity[x][y] = False
     else:
-        buttons[x][y].config(bg="#F0F0F0")
-        color_rgb = hex_to_rgb("#F0F0F0")
+        buttons[x][y].config(bg="#FFFFFF")
+        color_rgb = hex_to_rgb("#FFFFFF")
         buttons_polarity[x][y] = True
     buttons_colors[x][y] = color_rgb
 
 def conway_clear():
-    led.clear
+    try:
+        led.clear()
+    except Exception:
+        pass
     for x in range(ROWS):
         for y in range(COLS):
             buttons[x][y].config(bg="#000000")
             buttons_colors[x][y] = (0, 0, 0, 0)
+            buttons_polarity[x][y] = False
 
 
 def update():
+    next_state = [[False for _ in range(COLS)] for _ in range(ROWS)]
     for x in range(ROWS):
         for y in range(COLS):
+            neighbors = 0
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx = x + dx
+                    ny = y + dy
+                    if 0 <= nx < ROWS and 0 <= ny < COLS and buttons_polarity[nx][ny]:
+                        neighbors += 1
+
             if buttons_polarity[x][y]:
-                for i in range(8):
-                    pass
+                next_state[x][y] = (neighbors == 2 or neighbors == 3)
+            else:
+                next_state[x][y] = (neighbors == 3)
+
+    for x in range(ROWS):
+        for y in range(COLS):
+            buttons_polarity[x][y] = bool(next_state[x][y])
+            if buttons_polarity[x][y]:
+                buttons[x][y].config(bg="#FFFFFF")
+                buttons_colors[x][y] = hex_to_rgb("#FFFFFF")
+            else:
+                buttons[x][y].config(bg="#000000")
+                buttons_colors[x][y] = hex_to_rgb("#000000")
+    submit()
+
+def play_conway():
+    game_states[0] = True
+    print(game_states[0])
+
+
+def stop_conway():
+    game_states[0] = False
+    print(game_states[0])
+                    
                      
 
 def load_conway():
+    buttons_polarity = [[False for _ in range(COLS)] for _ in range(ROWS)]
+    game_states = [None for _ in range(2)]
+    game_states[0] = False
     deload_light_brite()
     for x in range(ROWS):
         for y in range(COLS):
@@ -331,7 +374,6 @@ def load_conway():
                             bd=1,
                             bg="#000000")
             button.place(x=x * PIXEL_WIDTH, y=(y * PIXEL_HEIGHT), width=PIXEL_WIDTH, height=PIXEL_HEIGHT)
-            p = False
             button.config(command=lambda x=x, y=y: flip_polarity(x, y))
             buttons[x][y] = button
             buttons_polarity[x][y] = False
@@ -347,6 +389,20 @@ def load_conway():
     submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
     buttons_other[1] = Button(root, bg="#F0F0F0", text="RESET", command=conway_clear)
     buttons_other[1].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+    play_width = 200
+    play_x = (total_width_grid + ((total_width - total_width_grid)/2)) - play_width/2
+    play_y = total_height / 7
+    buttons_other[2] = Button(root, bg="#F0F0F0", text="Start Simulation", command=play_conway)
+    buttons_other[2].place(x=play_x, y=play_y, width=play_width, height=32)
+
+    play_width = 200
+    play_x = (total_width_grid + ((total_width - total_width_grid)/2)) - play_width/2
+    play_y = (total_height / 7)+64
+    buttons_other[3] = Button(root, bg="#F0F0F0", text="Stop Simulation", command=stop_conway)
+    buttons_other[3].place(x=play_x, y=play_y, width=play_width, height=32)
+
+    
     
 
 
@@ -364,7 +420,7 @@ def deload_light_brite():
         buttons_other[i].destroy()
 
 def load_light_brite():
-    deload_all_lights()
+    deload_light_brite()
     total_width_grid = (COLS * PIXEL_WIDTH)
     total_width = total_width_grid + 250
     total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
@@ -415,7 +471,7 @@ def load_light_brite():
         button.config(command=lambda i=i: set_color_from_history(i))
         buttons_other[i+4] = button
         offset += 48
-        
+
     offset = 0
     for i in range(5):
         button = Button(root,
