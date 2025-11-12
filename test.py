@@ -4,6 +4,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 import routine_with_buttons as led
 import json
 import time
+import random
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -118,7 +119,6 @@ def clear():
         for y in range(COLS):
             buttons[x][y].config(bg="#F0F0F0")
             buttons_colors[x][y] = (0, 0, 0, 0)
-    submit()
 
 
 def base_colors(b):
@@ -328,7 +328,6 @@ def conway_clear():
             buttons[x][y].config(bg="#000000")
             buttons_colors[x][y] = (0, 0, 0, 0)
             buttons_polarity[x][y] = False
-    submit()
 
 
 def update():
@@ -388,6 +387,18 @@ def stop_conway():
     game_states[0] = False
     print(game_states[0])
 
+def randomize():
+    for x in range(ROWS):
+        for y in range(COLS):
+            alive = random.choice([True, False])
+            buttons_polarity[x][y] = alive
+            btn_color = "#FFFFFF" if alive else "#000000"
+            try:
+                buttons[x][y].config(bg=btn_color)
+            except Exception:
+                pass
+            buttons_colors[x][y] = hex_to_rgb(btn_color)
+
 def load_conway():
     buttons_polarity = [[False for _ in range(COLS)] for _ in range(ROWS)]
     game_states = [None for _ in range(2)]
@@ -427,6 +438,12 @@ def load_conway():
     stop_y = (total_height / 7)+64
     buttons_other[3] = Button(root, bg="#F0F0F0", text="Stop Simulation", command=stop_conway)
     buttons_other[3].place(x=stop_x, y=stop_y, width=stop_width, height=32)
+
+    random_width = 200
+    random_x = (total_width_grid + ((total_width - total_width_grid)/2)) - random_width/2
+    random_y = (total_height / 7)+64
+    buttons_other[5] = Button(root, bg="#F0F0F0", text="Randomize", command=randomize)
+    buttons_other[5].place(x=random_x, y=random_y+128, width=random_width, height=32)
 
     buttons_other[4] = Scale(root, from_=0, to=20, orient="horizontal",
                  label="Select a Value", tickinterval=5, length = (total_width - total_width_grid)-20)
