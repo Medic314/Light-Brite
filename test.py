@@ -118,6 +118,7 @@ def clear():
         for y in range(COLS):
             buttons[x][y].config(bg="#F0F0F0")
             buttons_colors[x][y] = (0, 0, 0, 0)
+    submit()
 
 
 def base_colors(b):
@@ -170,7 +171,7 @@ def base_colors(b):
 total_width_grid = (COLS * PIXEL_WIDTH)
 total_width = total_width_grid + 250
 total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
-root.geometry(f"{total_width}x{total_height*2}")
+root.geometry(f"{total_width}x{total_height}")
 
 for x in range(ROWS):
     for y in range(COLS):
@@ -327,6 +328,7 @@ def conway_clear():
             buttons[x][y].config(bg="#000000")
             buttons_colors[x][y] = (0, 0, 0, 0)
             buttons_polarity[x][y] = False
+    submit()
 
 
 def update():
@@ -362,8 +364,10 @@ def update():
 def play_conway():
     try:
         initial_delay_ms = int(buttons_other[4].get() * 100)
+        if initial_delay_ms == 0:
+            initial_delay_ms = 100
     except Exception:
-        initial_delay_ms = 500
+        initial_delay_ms = 100
     game_states[0] = True
 
     def _step():
@@ -372,18 +376,17 @@ def play_conway():
         update()
         try:
             next_delay = int(buttons_other[4].get() * 100)
+            if next_delay == 0:
+                next_delay = 100
         except Exception:
             next_delay = initial_delay_ms
         root.after(next_delay, _step)
 
     root.after(initial_delay_ms, _step)
 
-
 def stop_conway():
     game_states[0] = False
     print(game_states[0])
-                    
-                     
 
 def load_conway():
     buttons_polarity = [[False for _ in range(COLS)] for _ in range(ROWS)]
@@ -425,13 +428,13 @@ def load_conway():
     buttons_other[3] = Button(root, bg="#F0F0F0", text="Stop Simulation", command=stop_conway)
     buttons_other[3].place(x=stop_x, y=stop_y, width=stop_width, height=32)
 
-    buttons_other[4] = Scale(root, from_=1, to=20, orient="horizontal",
-                 label="Select a Value", tickinterval=1, length = (total_width - total_width_grid))
-    buttons_other[4].place(x=stop_x-24, y=stop_y+32)
+    buttons_other[4] = Scale(root, from_=0, to=20, orient="horizontal",
+                 label="Select a Value", tickinterval=5, length = (total_width - total_width_grid)-20)
+    buttons_other[4].place(x=stop_x-20, y=stop_y+32)
 
-    
-    
+# ---------------------------------------------------------------------------------------------------
 
+#insert animation here
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -533,8 +536,6 @@ def load_light_brite():
     buttons_other[16].config(bg="#AA00FF")
     buttons_other[17].config(bg="#FF00FF")
     buttons_other[18].config(bg="#FFFFFF")
-
-        
 
 menu_bar = Menu(root)
 file_menu = Menu(menu_bar, tearoff=0)
