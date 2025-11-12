@@ -8,7 +8,7 @@ import time
 # ---------------------------------------------------------------------------------------------------
 
 root = Tk()
-root.title("Super Cool Program That Lets You Select LED Colors On a Grid 2025 Real")
+root.title("Super Cool Program That Lets You Select LED Colors On a Grid 2025 Real Feat. John Conway")
 
 ROWS = 16
 COLS = 16
@@ -19,7 +19,7 @@ colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
-buttons_other = [None for _ in range(19)]
+buttons_other = [None for _ in range(20)]
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -61,6 +61,10 @@ def change_bg(x, y):
             buttons[x][y].config(bg="#F0F0F0")
         color_rgb = hex_to_rgb(colors[0])
         buttons_colors[x][y] = color_rgb
+        if check_var.get() == 1:
+            submit()
+            print("Auto")
+
 
 def set_color_from_history(history_number):
     colors.insert(0, colors[history_number+1])
@@ -93,10 +97,10 @@ def rotate_and_mirror(grid):
         return rotated
 
     rotated = grid
-    for _ in range(3):  # rotate three times (3 * 90° CCW = 270° CCW / 90° CW)
+    for _ in range(3):
         rotated = rotate90_ccw(rotated)
 
-    # Mirror horizontally (flip each row left-to-right)
+
     mirrored = [row[::-1] for row in rotated]
     return mirrored
 
@@ -166,7 +170,7 @@ def base_colors(b):
 total_width_grid = (COLS * PIXEL_WIDTH)
 total_width = total_width_grid + 250
 total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
-root.geometry(f"{total_width}x{total_height}")
+root.geometry(f"{total_width}x{total_height*2}")
 
 for x in range(ROWS):
     for y in range(COLS):
@@ -202,6 +206,10 @@ colorpick2_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - colo
 colorpick2_y = total_height / 7
 buttons_other[3] = Button(root, bg="#F0F0F0", command=reset_color)
 buttons_other[3].place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
+
+check_var = IntVar()
+buttons_other[19] = Checkbutton(root, text="Automatically Submit?", variable=check_var)
+buttons_other[19].place(x=(total_width_grid + ((total_width - total_width_grid)/2.50)) - colorpick_width/2, y=colorpick_y+64+36)
 
 offset = 0
 for i in range(5):
@@ -352,8 +360,23 @@ def update():
     submit()
 
 def play_conway():
+    try:
+        initial_delay_ms = int(buttons_other[4].get() * 100)
+    except Exception:
+        initial_delay_ms = 500
     game_states[0] = True
-    print(game_states[0])
+
+    def _step():
+        if not game_states[0]:
+            return
+        update()
+        try:
+            next_delay = int(buttons_other[4].get() * 100)
+        except Exception:
+            next_delay = initial_delay_ms
+        root.after(next_delay, _step)
+
+    root.after(initial_delay_ms, _step)
 
 
 def stop_conway():
@@ -396,11 +419,15 @@ def load_conway():
     buttons_other[2] = Button(root, bg="#F0F0F0", text="Start Simulation", command=play_conway)
     buttons_other[2].place(x=play_x, y=play_y, width=play_width, height=32)
 
-    play_width = 200
-    play_x = (total_width_grid + ((total_width - total_width_grid)/2)) - play_width/2
-    play_y = (total_height / 7)+64
+    stop_width = 200
+    stop_x = (total_width_grid + ((total_width - total_width_grid)/2)) - stop_width/2
+    stop_y = (total_height / 7)+64
     buttons_other[3] = Button(root, bg="#F0F0F0", text="Stop Simulation", command=stop_conway)
-    buttons_other[3].place(x=play_x, y=play_y, width=play_width, height=32)
+    buttons_other[3].place(x=stop_x, y=stop_y, width=stop_width, height=32)
+
+    buttons_other[4] = Scale(root, from_=1, to=20, orient="horizontal",
+                 label="Select a Value", tickinterval=1, length = (total_width - total_width_grid))
+    buttons_other[4].place(x=stop_x-24, y=stop_y+32)
 
     
     
@@ -461,6 +488,10 @@ def load_light_brite():
     buttons_other[3] = Button(root, bg="#F0F0F0", command=reset_color)
     buttons_other[3].place(x=colorpick2_x, y=colorpick2_y, width=colorpick2_width, height=32)
     offset = 0
+
+    check_var = IntVar()
+    buttons_other[19] = Checkbutton(root, text="Automatically Submit?", variable=check_var)
+    buttons_other[19].place(x=(total_width_grid + ((total_width - total_width_grid)/2.50)) - colorpick_width/2, y=colorpick_y+64+36)
 
     for i in range(5):
         button = Button(root,
