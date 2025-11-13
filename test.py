@@ -20,7 +20,7 @@ colors = ["#000000", "#000000", "#000000", "#000000", "#000000", "#000000"]
 
 buttons = [[None for _ in range(COLS)] for _ in range(ROWS)]
 buttons_colors = [[None for _ in range(COLS)] for _ in range(ROWS)]
-buttons_other = [None for _ in range(20)]
+buttons_other = [None for _ in range(30)]
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -302,6 +302,95 @@ def save_file():
         with open(file_path, 'w') as f:
             json.dump(buttons_colors, f)
 
+# Animation load/save (open_file2 / save_file2)
+def open_file2():
+    file_path = askopenfilename(filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")])
+    if not file_path:
+        return
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+
+    # support {"frames": [...]} or raw list of frames
+    if isinstance(data, dict) and 'frames' in data:
+        frames_data = data['frames']
+    else:
+        frames_data = data
+
+    if not isinstance(frames_data, list):
+        return
+
+    new_frames = []
+    for frame in frames_data:
+        grid = empty_grid()
+        if not isinstance(frame, (list, tuple)):
+            new_frames.append(grid)
+            continue
+        for i, row in enumerate(frame):
+            if i >= ROWS:
+                break
+            if not isinstance(row, (list, tuple)):
+                continue
+            for j, cell in enumerate(row):
+                if j >= COLS:
+                    break
+                if isinstance(cell, (list, tuple)):
+                    if len(cell) == 3:
+                        r, g, b = int(cell[0]), int(cell[1]), int(cell[2])
+                        a = 0
+                    elif len(cell) >= 4:
+                        r, g, b, a = int(cell[0]), int(cell[1]), int(cell[2]), int(cell[3])
+                    else:
+                        r = g = b = a = 0
+                else:
+                    r = g = b = a = 0
+                grid[i][j] = (r, g, b, a)
+        new_frames.append(grid)
+
+    if not new_frames:
+        return
+
+    global frame_grids, frames, current_frame
+    frame_grids = new_frames
+    frames = len(frame_grids)
+    current_frame = 0
+
+    # Switch UI into animation mode and load first frame
+    try:
+        load_animation()
+    except Exception:
+        pass
+    try:
+        load_grid_to_ui(frame_grids[current_frame])
+    except Exception:
+        pass
+
+def save_file2():
+    file_path = asksaveasfilename(defaultextension=".json",
+                                   filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")])
+    if not file_path:
+        return
+
+    global frame_grids, frames
+    out_frames = []
+    count = min(frames, len(frame_grids))
+    for i in range(count):
+        frame = frame_grids[i]
+        frame_out = []
+        for row in frame:
+            row_out = []
+            for cell in row:
+                if isinstance(cell, (list, tuple)) and len(cell) >= 3:
+                    r = int(cell[0]); g = int(cell[1]); b = int(cell[2])
+                    a = int(cell[3]) if len(cell) >= 4 else 0
+                    row_out.append([r, g, b, a])
+                else:
+                    row_out.append([0, 0, 0, 0])
+            frame_out.append(row_out)
+        out_frames.append(frame_out)
+
+    with open(file_path, 'w') as f:
+        json.dump(out_frames, f, indent=2)
+
 # ---------------------------------------------------------------------------------------------------
 buttons_polarity = [[False for _ in range(COLS)] for _ in range(ROWS)]
 game_states = [None for _ in range(2)]
@@ -450,8 +539,194 @@ def load_conway():
     buttons_other[4].place(x=stop_x-20, y=stop_y+32)
 
 # ---------------------------------------------------------------------------------------------------
+frames = 3
+current_frame = 0
+animation_running = False
 
-#insert animation here
+def empty_grid():
+    return [[(0, 0, 0, 0) for _ in range(COLS)] for _ in range(ROWS)]
+
+frame_grids = [empty_grid() for _ in range(frames)]
+
+def ensure_frame_list():
+    global frame_grids
+    while len(frame_grids) < frames:
+        frame_grids.append(empty_grid())
+
+def copy_ui_to_grid():
+    return [list(row)[:] for row in buttons_colors]
+
+def load_grid_to_ui(grid):
+    for x in range(ROWS):
+        for y in range(COLS):
+            try:
+                cell = grid[x][y]
+            except Exception:
+                cell = (0, 0, 0, 0)
+            if not isinstance(cell, (list, tuple)) or len(cell) < 3:
+                r = g = b = a = 0
+            else:
+                r = int(cell[0]); g = int(cell[1]); b = int(cell[2])
+                a = int(cell[3]) if len(cell) >= 4 else 0
+            buttons_colors[x][y] = (r, g, b, a)
+            if (r, g, b, a) == (0, 0, 0, 0):
+                btn_color = "#F0F0F0"
+            else:
+                r_clip = max(0, min(255, r))
+                g_clip = max(0, min(255, g))
+                b_clip = max(0, min(255, b))
+                btn_color = f'#{r_clip:02x}{g_clip:02x}{b_clip:02x}'
+            try:
+                buttons[x][y].config(bg=btn_color)
+            except Exception:
+                pass
+
+def next_frame():
+    global current_frame
+    ensure_frame_list()
+    frame_grids[current_frame] = copy_ui_to_grid()
+    current_frame = (current_frame + 1) % frames
+    ensure_frame_list()
+    load_grid_to_ui(frame_grids[current_frame])
+    try:
+        buttons_other[25].config(text=f"Current Frame: {current_frame+1}")
+    except Exception:
+        pass
+
+def previous_frame():
+    global current_frame
+    ensure_frame_list()
+    frame_grids[current_frame] = copy_ui_to_grid()
+    current_frame = (current_frame - 1) % frames
+    ensure_frame_list()
+    load_grid_to_ui(frame_grids[current_frame])
+    try:
+        buttons_other[25].config(text=f"Current Frame: {current_frame+1}")
+    except Exception:
+        pass
+
+def raise_frames():
+    global frames
+    frames += 1
+    frame_grids.append(empty_grid())
+    try:
+        buttons_other[24].config(text=f"{frames} Frames total")
+    except Exception:
+        pass
+
+def lower_frames():
+    global frames, current_frame, frame_grids
+    if frames <= 1:
+        return
+    frames -= 1
+    if len(frame_grids) > frames:
+        frame_grids.pop()
+    if current_frame >= frames:
+        current_frame = frames - 1
+        load_grid_to_ui(frame_grids[current_frame])
+    try:
+        buttons_other[24].config(text=f"{frames} Frames total")
+        buttons_other[25].config(text=f"Current Frame: {current_frame+1}")
+    except Exception:
+        pass
+
+def play_animation():
+    global animation_running, current_frame
+    ensure_frame_list()
+    try:
+        frame_grids[current_frame] = copy_ui_to_grid()
+    except Exception:
+        pass
+    animation_running = True
+
+    try:
+        initial_delay_ms = int(buttons_other[27].get() * 100)
+        if initial_delay_ms <= 0:
+            initial_delay_ms = 100
+    except Exception:
+        initial_delay_ms = 200
+
+    def _step():
+        global current_frame, animation_running
+        if not animation_running:
+            return
+        current_frame = (current_frame + 1) % frames
+        ensure_frame_list()
+        load_grid_to_ui(frame_grids[current_frame])
+        try:
+            buttons_other[25].config(text=f"Current Frame: {current_frame+1}")
+        except Exception:
+            pass
+        submit()
+        try:
+            next_delay = int(buttons_other[27].get() * 100)
+            if next_delay <= 0:
+                next_delay = initial_delay_ms
+        except Exception:
+            next_delay = initial_delay_ms
+        root.after(next_delay, _step)
+
+    root.after(initial_delay_ms, _step)
+
+def stop_animation():
+    global animation_running
+    animation_running = False
+
+def load_animation():
+    load_light_brite()
+    try:
+        buttons_other[19].destroy()
+    except Exception:
+        pass
+    try:
+        buttons_other[0].destroy()
+    except Exception:
+        pass
+    ensure_frame_list()
+
+    submit_width = 100
+    submit_x = max((total_width_grid - submit_width) // 4, 0)-50
+    submit_y = ROWS * PIXEL_HEIGHT + 10 // 2
+    buttons_other[0] = Button(root, bg="#F0F0F0", text="Start Animation", command=play_animation)
+    buttons_other[0].place(x=submit_x, y=submit_y, width=submit_width, height=32)
+
+    buttons_other[26] = Button(root, bg="#F0F0F0", text="Stop Animation", command=stop_animation)
+    buttons_other[26].place(x=submit_x+100, y=submit_y, width=submit_width, height=32)
+
+    arrowL_width = 32
+    arrowL_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - arrowL_width)-32-32
+    arrowL_y = total_height / 7
+    buttons_other[20] = Button(root, bg="#F0F0F0", command=previous_frame, text="<")
+    buttons_other[20].place(x=arrowL_x, y=arrowL_y+256, width=arrowL_width, height=32)
+
+    arrowR_width = 32
+    arrowR_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - arrowR_width)+64+32
+    arrowR_y = total_height / 7
+    buttons_other[21] = Button(root, bg="#F0F0F0", command=next_frame, text=">")
+    buttons_other[21].place(x=arrowR_x, y=arrowR_y+256, width=arrowR_width, height=32)
+
+    arrowU_width = 32
+    arrowU_x = ((total_width_grid + ((total_width - total_width_grid)/2)) - arrowL_width)-32-32
+    arrowU_y = (total_height / 7)+256+64
+    buttons_other[22] = Button(root, bg="#F0F0F0", command=raise_frames, text="+")
+    buttons_other[22].place(x=arrowU_x, y=arrowU_y, width=arrowU_width, height=16)
+
+    buttons_other[23] = Button(root, bg="#F0F0F0", command=lower_frames, text="-")
+    buttons_other[23].place(x=arrowU_x, y=arrowU_y+16, width=arrowU_width, height=16)
+
+    label_width = 100
+    label_x = (total_width_grid + ((total_width - total_width_grid)/2)) - label_width/2
+    buttons_other[24] = Label(root, text=f"{frames} Frames total")
+    buttons_other[24].place(x=label_x, y=arrowU_y, width=label_width, height=32)
+
+    buttons_other[25] = Label(root, text=f"Current Frame: {current_frame+1}")
+    buttons_other[25].place(x=label_x, y=arrowU_y-64, width=label_width, height=32)
+
+    buttons_other[27] = Scale(root, from_=0, to=20, orient="horizontal",
+                 label="Frame Delay", tickinterval=5, length = (total_width - total_width_grid)-20)
+    buttons_other[27].set(2)
+    buttons_other[27].place(x=label_x-64, y=submit_y-42)
+
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -464,7 +739,10 @@ def deload_light_brite():
     clear()
     deload_all_lights()
     for i in range(len(buttons_other)):
-        buttons_other[i].destroy()
+        try:
+            buttons_other[i].destroy()
+        except Exception:
+            pass
 
 def load_light_brite():
     deload_light_brite()
@@ -556,13 +834,17 @@ def load_light_brite():
 
 menu_bar = Menu(root)
 file_menu = Menu(menu_bar, tearoff=0)
-file_menu.add_command(label="Open", command=open_file)
-file_menu.add_command(label="Save", command=save_file)
+file_menu.add_command(label="Open Frame", command=open_file)
+file_menu.add_command(label="Save Frame", command=save_file)
+file_menu.add_separator()
+file_menu.add_command(label="Open Animation", command=open_file2)
+file_menu.add_command(label="Save Animation", command=save_file2)
 menu_bar.add_cascade(label="File", menu=file_menu)
 
 file_menu2 = Menu(menu_bar, tearoff=0)
 
 file_menu2.add_command(label="Light Brite", command=load_light_brite)
+file_menu2.add_command(label="Animation", command=load_animation)
 file_menu2.add_command(label="Conway", command=load_conway)
 menu_bar.add_cascade(label="Modes", menu=file_menu2)
 

@@ -41,3 +41,7 @@ Despite all of this im still only like 65% sure this will work at all so no prom
 
 I tried to save to a .txt file, but any solution i could find / come up with would be so comedically tedious and inefficient that i just asked ai... and it used json...
 thats 2 for the count on my internal fight with AI use, my Mr. Hyde is showing GAH
+
+Added conways flawlessly, im so cool im so awesome im so cool
+
+Added animations, with a seperate saving schema for them. Using ai again however... BUT EVERYTHING that isnt JSON SAVING was made by MEE!!!
