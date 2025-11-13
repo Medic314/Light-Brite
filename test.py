@@ -1,10 +1,54 @@
 from tkinter import *
 from tkinter.colorchooser import askcolor
 from tkinter.filedialog import askopenfilename, asksaveasfilename
-import routine_with_buttons as led
 import json
-import time
 import random
+# ---------------------------------------------------------------------------------------------------
+import board
+import neopixel
+import time
+
+# ------- CONFIG -------
+PIN = board.A1
+WIDTH = 16
+HEIGHT = 16
+NUM_PIXELS = WIDTH * HEIGHT
+BRIGHTNESS = 0.08
+PIXEL_ORDER = neopixel.GRBW   # change to GRB for RGB strips
+BK = (0, 0, 0, 0)
+BL = (0, 0, 255, 0)
+RD = (189, 8, 8, 0)
+SK = (217, 167, 57, 0)
+HR = (126, 153, 83, 0)
+PR = (52, 21, 57, 0)
+
+led_grid = ()
+pixels = neopixel.NeoPixel(
+    PIN, NUM_PIXELS,
+    brightness=BRIGHTNESS,
+    auto_write=False,
+    pixel_order=PIXEL_ORDER
+)
+
+def led_xy_to_index(x, y):
+    """Map (x,y) -> index for a zigzag-wired matrix, origin at top-left."""
+    return y * WIDTH + (x if y % 2 == 1 else (WIDTH - 1 - x))
+
+def led_set_px(x, y, color):
+    if 0 <= x < WIDTH and 0 <= y < HEIGHT:
+        pixels[led_xy_to_index(x, y)] = color
+
+def led_clear(bg=BL):
+    pixels.fill(bg)
+
+def led_draw_grid():
+    for i in range(len(led_grid)):
+        for j in range(len(led_grid[i])):
+            print(i)
+            print(j)
+            led_set_px(j, i, led_grid[i][j])
+
+    pixels.show()
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -107,14 +151,14 @@ def rotate_and_mirror(grid):
 
 
 def submit():
-    led.grid = rotate_and_mirror(buttons_colors)
+    led_grid = rotate_and_mirror(buttons_colors)
     print(rotate_and_mirror(buttons_colors))
-    for i in led.grid:
+    for i in led_grid:
         print(i)
-    led.draw_grid()
+    led_draw_grid()
 
 def clear():
-    led.clear
+    led_clear
     for x in range(ROWS):
         for y in range(COLS):
             buttons[x][y].config(bg="#F0F0F0")
@@ -409,7 +453,7 @@ def flip_polarity(x,y):
 
 def conway_clear():
     try:
-        led.clear()
+        led_clear()
     except Exception:
         pass
     for x in range(ROWS):
