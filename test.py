@@ -172,6 +172,7 @@ total_width_grid = (COLS * PIXEL_WIDTH)
 total_width = total_width_grid + 250
 total_height = (ROWS * PIXEL_HEIGHT + 10 + 32)
 root.geometry(f"{total_width}x{total_height}")
+print(f"{total_width}x{total_height}")
 
 for x in range(ROWS):
     for y in range(COLS):
@@ -644,7 +645,7 @@ def play_animation():
         if initial_delay_ms <= 0:
             initial_delay_ms = 100
     except Exception:
-        initial_delay_ms = 200
+        initial_delay_ms = 100
 
     def _step():
         global current_frame, animation_running
