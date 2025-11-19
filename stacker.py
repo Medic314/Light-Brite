@@ -8,40 +8,21 @@ ROWS = 16
 COLS = 16
 STAGE = 16
 
-grid = [[None for _ in range(COLS)] for _ in range(ROWS)]
-
-def rotate_and_mirror(grid):
-    for x in range(ROWS):
-        for y in range(COLS):
-            if grid[x][y] == None:
-                grid [x][y] = (0, 0, 0, 0)
-    def rotate90_ccw(g):
-        rows = len(g)
-        cols = max((len(r) for r in g), default=0)
-        rotated = []
-        for y in range(cols):
-            new_row = []
-            for x in range(rows):
-                if len(g[x]) > (cols - 1 - y):
-                    new_row.append(g[x][cols - 1 - y])
-                else:
-                    new_row.append((0, 0, 0, 0))
-            rotated.append(new_row)
-        return rotated
-    rotated = grid
-    for _ in range(3):
-        rotated = rotate90_ccw(rotated)
-    mirrored = [row[::-1] for row in rotated]
-    return mirrored
+grid = [[(0, 0, 0, 0) for _ in range(COLS)] for _ in range(ROWS)]
+grid_print = [[None for _ in range(COLS)] for _ in range(ROWS)]
 
 def upload():
-    led.grid = rotate_and_mirror(grid)
+    led.grid = grid
     led.draw_grid()
+    for i in led.grid:
+        print(i)
+            
+    
 
 def clear():
     for x in range(ROWS):
         for y in range(COLS):
-            grid[x][y] = None
+            grid[x][y] = (0, 0, 0, 0)
     upload()
 
 moving = False
@@ -54,53 +35,76 @@ def start_stacker(length=lives, speed=200, position=ROWS-1):
         return
     moving = True
     stop_request = False
-    pos = 0
+    true_pos = 0  
     direction = 1
 
+    def draw_row(draw_pos, length):
+        for c in range(COLS):
+            grid[position][c] = (0, 0, 0, 0)
+        for i in range(length):
+            if 0 <= draw_pos + i < COLS:
+                grid[position][draw_pos + i] = (255, 0, 0, 0)
+
     def step():
-        nonlocal pos, direction
+        nonlocal true_pos, direction
         global moving, stop_request, lives
         if stop_request:
             lost = 0
-            try:
-                below_row = grid[position + 1]
-            except Exception:
-                below_row = None
+            below = grid[position + 1] if position + 1 < ROWS else None
             for i in range(length):
-                idx = pos + i
-                if 0 <= idx < COLS:
-                    if below_row is None:
-                        pass
-                    else:
-                        if below_row[idx] == (255, 0, 0, 0):
-                            grid[position][idx] = (255, 0, 0, 0)
-                        else:
-                            if grid[position][idx] ==  (255, 0, 0, 0):
-                                grid[position][idx] = None
-                                lost += 1
+                idx = true_pos + i
+                if below is None:
+                    if 0 <= idx < COLS:
+                        grid[position][idx] = (255, 0, 0, 0)
+                    continue
+                if 0 <= idx < COLS and below[idx] == (255, 0, 0, 0):
+                    grid[position][idx] = (255, 0, 0, 0)
+                else:
+                    if 0 <= idx < COLS:
+                        grid[position][idx] = (0, 0, 0, 0)
+                    lost += 1
             if lost:
                 lives = max(0, lives - lost)
-
             upload()
             moving = False
+            root.after(300, next_stage)
             return
-        for c in range(COLS):
-            grid[position][c] = None
-        for i in range(length):
-            idx = pos + i
-            if 0 <= idx < COLS:
-                grid[position][idx] = (255, 0, 0, 0)
+        true_pos += direction
+        draw_pos = min(max(true_pos, 0), COLS - length)
+
+        draw_row(draw_pos, length)
         upload()
-        pos += direction
-        if pos + length > COLS:
-            pos = COLS - length
+    
+        if true_pos + length >= COLS:
             direction = -1
-        if pos < 0:
-            pos = 0
+        if true_pos <= 0:
             direction = 1
+
         root.after(speed, step)
 
     step()
+def wait():
+    pass
+
+def special_screens(num):
+    if num == 1:
+        sgrid = [[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [255, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]
+    return sgrid
+def next_stage():
+    global STAGE, lives, grid
+    if lives <= 0:
+        print("Game Over")
+        return
+    STAGE -= 1
+    if STAGE < 0:
+        print("YOU WIN!")
+        root.after(500, wait)
+        grid = special_screens(1)
+        upload()
+        return
+    speed = ((STAGE + 1) * 100) // 3 + 10
+    start_stacker(length=lives, speed=speed, position=STAGE)
+
 
 def stacker_stage(event):
     global stop_request
@@ -110,7 +114,7 @@ def stacker_stage(event):
 def play():
     global STAGE
     STAGE -= 1
-    start_stacker(length=lives, speed=(STAGE*100)//3+10, position=STAGE)
+    start_stacker(length=lives, speed=(STAGE * 100) // 3 + 10, position=STAGE)
 
 start_width = 100
 start_x = 730/2 - 50
@@ -120,10 +124,9 @@ start_button.place(x=start_x, y=start_y, width=start_width, height=32)
 
 stack_width = 100
 stack_x = 730/2 - 50
-stack_y = 522/2 - 16 
+stack_y = 522/2 - 16
 stack_button = Button(root, bg="#F0F0F0", text="Stack", command=play)
 stack_button.place(x=stack_x, y=stack_y, width=stack_width, height=32)
-
 
 root.bind("<Key>", stacker_stage)
 root.mainloop()
